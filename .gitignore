@@ -1,0 +1,5 @@
+**/bin/
+**/obj/
+**/.vs/
+Midi2MagicStomp.sln
+Midi2MagicStomp.csproj.user
