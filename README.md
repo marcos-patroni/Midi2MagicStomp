@@ -1,5 +1,5 @@
 # Midi2MagicStomp
-This project allow send program change Midi information to Yamaha MagicStomp.
+This project allows you send program change Midi information to Yamaha MagicStomp.
 
 To use this program, you need:
 1) Windows (7, 8, 10 or 11). 
