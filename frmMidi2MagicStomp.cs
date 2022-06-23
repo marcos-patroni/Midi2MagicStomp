@@ -1,12 +1,14 @@
 namespace Midi2MagicStomp;
 using Commons.Music.Midi;
-
+using System.Text;
+using System.Linq;
 public partial class frmMidi2MagicStomp : Form
 {
     private dadosMS dataMS = new();
     private IMidiOutput outDevice = default!;
     Patch patch = default!;
     private byte conta = 0;
+    private StringBuilder sb = null;
     public frmMidi2MagicStomp()
     {
         InitializeComponent();
@@ -189,4 +191,108 @@ public partial class frmMidi2MagicStomp : Form
             }
         }
     }
+
+    private void button1_Click(object sender, EventArgs e)
+    {
+        try
+        {
+            sb = new StringBuilder();
+            foreach (var item in dataMS.Patches)
+            {
+                string sPatchName = "";
+                string sPatchData = "";
+                int conta = 0;
+                byte[] patchName = item.PatchName;
+
+                const int sysex = 4;
+                int contador = 0;
+                for (int i = 0; i < 64; i++)
+                {
+                    if (conta == 0)
+                    {
+                        if (i == 60)
+                            sPatchName += "06 ";
+                        else
+                            sPatchName += sysex.ToString("X").PadLeft(2, '0') + " ";
+                        conta = 3;
+                    }
+                    else
+                    {
+                        if (contador < 47)
+                            sPatchName += patchName[contador].ToString("X").PadLeft(2, '0') + " ";
+                        else
+                            sPatchName += "00 ";
+                        conta--;
+                        contador++;
+                    }
+                }
+
+                byte[] patchData = item.PatchData;
+                conta = 0;
+                contador = 0;
+                for (int i = 0; i < 192; i++)
+                {
+                    if (i == 64)
+                    {
+                        sPatchData += "\r\n";
+                    }
+                    if (i == 128)
+                    {
+                        sPatchData += "\r\n";
+                    }
+                    if (conta == 0)
+                    {
+                        if (i == 188)
+                            sPatchData += "05 ";
+                        else
+                            sPatchData += sysex.ToString("X").PadLeft(2, '0') + " ";
+                        conta = 3;
+                    }
+                    else
+                    {
+                        if (contador < 142)
+                            sPatchData += patchData[contador].ToString("X").PadLeft(2, '0') + " ";
+                        else
+                            sPatchData += "00 ";
+                        conta--;
+                        contador++;
+                    }
+                }
+
+
+
+                var programa =
+    @$"
+04 F0 43 7D 04 30 55 42 04 39 39 00 04 00 30 03 07 00 4D F7 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+{sPatchName}
+{sPatchData}
+04 F0 43 7D 04 30 55 42 04 39 39 00 04 00 30 13 07 00 3D F7 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+";
+                sb.Append(programa);
+            }
+        }
+        catch (Exception exc)
+        {
+            MessageBox.Show(exc.Message);
+        }
+    }
+
+    private void button2_Click(object sender, EventArgs e)
+    {
+        byte[] bytes = new byte[10] { 0, 1, 2, 15, 16, 17, 18, 19, 20, 1 };
+        var teste = String.Concat(Array.ConvertAll(bytes, x => x.ToString("X2") + " ")).Trim();
+        string[] groups = teste.Split(' ').Chunk(3).Select(chk => "04 " + string.Join(" ", chk)).ToArray();
+        var final = string.Join(" ", groups);
+
+        try
+        {
+            var stringFinal = sb.ToString();
+            File.WriteAllText("c:\\apps\\teste.yam", stringFinal);
+        }
+        catch (Exception exc)
+        {
+            MessageBox.Show(exc.Message);
+        }
+    }
 }
+
